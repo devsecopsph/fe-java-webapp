@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fe-app
+  namespace: apps
+spec:
+
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+      - name: nexus-secret
+      containers:
+      - name: frontend
+        image: nexus.emerson.local:5003/docker-images/java-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fe-app-service
+  namespace: apps
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort # Use LoadBalancer if you're in cloud
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fe-app-ingress
+  namespace: apps
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: app.emerson.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fe-app-service
+            port:
+              number: 80

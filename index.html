@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Java Webapp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        form, table {
+            margin-top: 20px;
+        }
+        input {
+            margin: 5px;
+            padding: 5px;
+        }
+        button {
+            padding: 6px 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            border-collapse: collapse;
+            width: 60%;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Basic Java WebApp</h1>
+
+    <form id="userForm">
+        <input type="text" id="name" placeholder="Enter name" required>
+        <input type="email" id="email" placeholder="Enter email" required>
+        <button type="submit">Add User</button>
+    </form>
+
+    <div class="error" id="errorMsg"></div>
+
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>Name</th><th>Email</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const form = document.getElementById('userForm');
+        const tableBody = document.querySelector('#usersTable tbody');
+        const errorMsg = document.getElementById('errorMsg');
+
+        const BACKEND_URL = 'http://localhost:8081/users';
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            errorMsg.textContent = '';
+
+            if (!name || !email) {
+                errorMsg.textContent = 'Name and email are required.';
+                return;
+            }
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (!response.ok) {
+                    errorMsg.textContent = 'Failed to save user.';
+                    return;
+                }
+
+                document.getElementById('name').value = '';
+                document.getElementById('email').value = '';
+                loadUsers();
+            } catch (error) {
+                console.error('Error submitting user:', error);
+                errorMsg.textContent = 'Error connecting to backend.';
+            }
+        });
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(BACKEND_URL);
+                const users = await response.json();
+
+                tableBody.innerHTML = users.map(user =>
+                    `<tr><td>${user.name}</td><td>${user.email}</td></tr>`
+                ).join('');
+            } catch (error) {
+                console.error('Error loading users:', error);
+                errorMsg.textContent = 'Failed to load users.';
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>
